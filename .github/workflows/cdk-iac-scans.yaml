@@ -1,0 +1,47 @@
+name: CDK IaC Scans
+concurrency: ${{ github.workflow }}
+
+on: 
+  workflow_dispatch: {}
+
+defaults:
+  run:
+    working-directory: "./"
+
+jobs:
+
+  Deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check-out repository
+        uses: actions/checkout@v4
+
+      - name: Set Node environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'latest'
+
+      - name: Install required Node packages
+        run: |
+          npm ci
+
+      - name: Build CDK application
+        run: |
+          npm run build
+
+      - name: Synthesize CDK application
+        run: |
+          npx cdk synth --quiet
+
+      - name: Lint CF templates with cfn_nag
+        continue-on-error: true
+        uses: stelligent/cfn_nag@master
+        with:
+          input_path: cdk.out/
+          extra_args: --print-suppression --ignore-fatal
+
+      - name: Scan CF templates with Snyk IaC
+        continue-on-error: true
+        uses: snyk/actions/scan-iac@master
+        with:
+          snyk_token: ${{ secrets.SNYK_TOKEN }}
