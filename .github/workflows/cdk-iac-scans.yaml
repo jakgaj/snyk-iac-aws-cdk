@@ -42,6 +42,8 @@ jobs:
 
       - name: Scan CF templates with Snyk IaC
         continue-on-error: true
-        uses: snyk/actions/scan-iac@master
+        uses: snyk/actions/iac@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          snyk_token: ${{ secrets.SNYK_TOKEN }}
+          file: cdk.out/*.template.json
